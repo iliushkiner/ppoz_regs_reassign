@@ -110,7 +110,9 @@ function getSum(appealNumber, selector){
       var db = new exDB();
       db.open(indexeddb, function () {
         let filter = "return item.appealNumber=='"+appealNumber+"'";
+        console.log("filter",filter);
         db.table("reassigns").query("kuvdCount").filter(filter).execute(function(r){
+          console.log("result filter " + appealNumber,r);
           let sum = 0;
           for (var j=0; j<parseInt(r.length); j++){
             sum += r[j];
