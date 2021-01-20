@@ -154,7 +154,6 @@ function getNums(reassignDate, reassignReg, selector){
       let nums = "";
       for(var j=0; j<r.length; j++){
         nums += r[j].appealNumber + "(<span id='" + r[j].appealNumber + "'><img src='loading.gif' alt='loading' class='loading'></span>); ";
-        getSum(r[j].appealNumber, "#" + r[j].appealNumber);
       }      
       
       if (r != null && r.length > 0){
@@ -163,6 +162,11 @@ function getNums(reassignDate, reassignReg, selector){
       } else {
         $(selector).remove();
       } 
+      
+      for(var j=0; j<r.length; j++){
+        getSum(r[j].appealNumber, "#" + r[j].appealNumber);
+      }      
+      
     });
   });
 }
