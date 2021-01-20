@@ -106,22 +106,6 @@ function getAjaxData(url, selctor, json){
   });
 }
 
-function getSum(appealNumber, selector){
-      var db = new exDB();
-      db.open(indexeddb, function () {
-        let filter = "return item.appealNumber=='"+appealNumber+"'";
-        console.log("filter",filter);
-        db.table("reassigns").query("kuvdCount").filter(filter).execute(function(r){
-          console.log("result filter " + appealNumber,r);
-          let sum = 0;
-          for (var j=0; j<parseInt(r.length); j++){
-            sum += r[j];
-          }
-          $(selector).html(sum);
-        });
-      });
-}
-
 function getCount(reassignDate, reassignReg, selector){
       var db = new exDB();
       db.open(indexeddb, function () {
@@ -152,20 +136,22 @@ function getNums(reassignDate, reassignReg, selector){
     db.table("reassigns").query("appealNumber").filter(filter).execute(function(r){
       //console.log("result filter с " + reassignDate + " по " + reasign_end_date,r);
       let nums = "";
+      let sum = 0;
       for(var j=0; j<r.length; j++){
-        nums += r[j].appealNumber + "(<span id='" + r[j].appealNumber + "'><img src='loading.gif' alt='loading' class='loading'></span>); ";
+        nums += r[j].appealNumber + "(" + r[j].kuvdCount + "); ";
+        sum += r[j].kuvdCount;
       }      
       
       if (r != null && r.length > 0){
-        $(selector).html("<span style='color: red; font-weight: bold;'>" + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + ")</span>: " + nums);
+        $(selector).html("<span style='color: red; font-weight: bold;'>" + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + "(" + sum + "))</span>: " + nums);
         //$(selector).html(reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> (всего: " + r.length + "): " + nums + "<br><br>");
       } else {
         $(selector).remove();
       } 
       
-      for(var j=0; j<r.length; j++){
+      /*for(var j=0; j<r.length; j++){
         getSum(r[j].appealNumber, "#" + r[j].appealNumber);
-      }      
+      }*/     
       
     });
   });
