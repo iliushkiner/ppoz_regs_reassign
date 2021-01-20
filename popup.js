@@ -106,6 +106,20 @@ function getAjaxData(url, selctor, json){
   });
 }
 
+function getSum(appealNumber, selector){
+      var db = new exDB();
+      db.open(indexeddb, function () {
+        let filter = "return item.appealNumber=='"+appealNumber+"'";
+        db.table("reassigns").query("kuvdCount").filter(filter).execute(function(r){
+          let sum = 0;
+          for (var j=0; j<parseInt(r.length); j++){
+            sum += r[j];
+          }
+          $(selector).html(sum);
+        });
+      });
+}
+
 function getCount(reassignDate, reassignReg, selector){
       var db = new exDB();
       db.open(indexeddb, function () {
@@ -137,7 +151,8 @@ function getNums(reassignDate, reassignReg, selector){
       //console.log("result filter с " + reassignDate + " по " + reasign_end_date,r);
       let nums = "";
       for(var j=0; j<r.length; j++){
-        nums += r[j].appealNumber + "; ";
+        nums += r[j].appealNumber + "(<span id='" + r[j].appealNumber + "'><img src='loading.gif' alt='loading' class='loading'></span>); ";
+        getSum(appealNumber, "#" + r[j].appealNumber);
       }      
       
       if (r != null && r.length > 0){
