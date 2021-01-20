@@ -138,7 +138,7 @@ function getNums(reassignDate, reassignReg, selector){
       let nums = "";
       let sum = 0;
       for(var j=0; j<r.length; j++){
-        nums += r[j].appealNumber + "<span style='color: red; font-weight: bold;'>[" + r[j].kuvdCount + "]<span>; ";
+        nums += r[j].appealNumber + "<span style='color: red; font-weight: bold;'>[" + r[j].kuvdCount + "]</span>; ";
         sum += r[j].kuvdCount;
       }      
       
