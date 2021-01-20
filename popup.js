@@ -138,12 +138,12 @@ function getNums(reassignDate, reassignReg, selector){
       let nums = "";
       let sum = 0;
       for(var j=0; j<r.length; j++){
-        nums += r[j].appealNumber + " [" + r[j].kuvdCount + "]; ";
+        nums += r[j].appealNumber + "<span style='color: red; font-weight: bold;'>[" + r[j].kuvdCount + "]<span>; ";
         sum += r[j].kuvdCount;
       }      
       
       if (r != null && r.length > 0){
-        $(selector).html("<span style='color: red; font-weight: bold;'>" + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + " [" + sum + "])</span>: " + nums);
+        $(selector).html("<span style='color: red; font-weight: bold;'>" + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + " <span style='color: red; font-weight: bold;'>[" + sum + "]</span>)</span>: " + nums);
         //$(selector).html(reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> (всего: " + r.length + "): " + nums + "<br><br>");
       } else {
         $(selector).remove();
