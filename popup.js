@@ -70,7 +70,7 @@ $(document).ready(function(){
   $('#countdate').val(window.localStorage.plg_regs_reassign_countdate);
   $("#now").html("<span style='color:red;'>сведения на</span>: <strong style='font-size: 11px'>"+Date()+"</strong>");
   let date_to = new Date();            
-  let str_date_to = date_to.getFullYear() + '-' + ((date_to.getMonth()+1)<10 ? '0' : '') + (date_to.getMonth()+1) + '-' + date_to.getDate();
+  let str_date_to = date_to.getFullYear() + '-' + ((date_to.getMonth()+1)<10 ? '0' : '') + (date_to.getMonth()+1) + '-' + ((date_to.getDate())<10 ? '0' : '') + date_to.getDate();
   $("#filtrdate").val(str_date_to);
   
   load_inf_statistic(); 
@@ -151,7 +151,7 @@ function getNums(reassignDate, reassignReg, selector){
             nums += r[j].appealNumber + "<span style='color: red; font-weight: bold;'>[" + r[j].kuvdCount + "]</span>; ";
             sum += r[j].kuvdCount;
         }      
-        $(selector).html("<span style='color: red; font-weight: bold;'>" + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + " <span style='color: red; font-weight: bold;'>[" + sum + "]</span>)</span>: " + nums);
+        $(selector).html("<span style='color: red; font-weight: bold;'>" + ((reassignDate.getDate())<10 ? '0' : '') + reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> </span><span style='color: blue; font-weight: bold;'>(всего: " + r.length + " <span style='color: red; font-weight: bold;'>[" + sum + "]</span>)</span>: " + nums);
         //$(selector).html(reassignDate.getDate() + '.' + ((reassignDate.getMonth()+1)<10 ? '0' : '') + (reassignDate.getMonth()+1) + '.' + reassignDate.getFullYear() + "<!--[" + reassignDate.getTime() + "]--> (всего: " + r.length + "): " + nums + "<br><br>");
       } else {
         $(selector).remove();
@@ -193,7 +193,7 @@ function load_inf_statistic(){
   //console.log(date_yesterday);
   let str_date_yesterday = "";    
   
-  str_date_yesterday = ""+ date_yesterday.getFullYear() + '-' + ((date_yesterday.getMonth()+1)<10 ? '0' : '') + (date_yesterday.getMonth()+1) + '-' + date_yesterday.getDate();
+  str_date_yesterday = ""+ date_yesterday.getFullYear() + '-' + ((date_yesterday.getMonth()+1)<10 ? '0' : '') + (date_yesterday.getMonth()+1) + '-' + ((date_yesterday.getDate())<10 ? '0' : '') + date_yesterday.getDate();
     
   //let regs = (typeof(window.localStorage.plg_def_regs) != "undefined" && window.localStorage.plg_def_regs != null) ? (window.localStorage.plg_def_regs).split(',') : [];
   
@@ -205,7 +205,7 @@ function load_inf_statistic(){
       req_date = req_date.setDate(req_date.getDate() - j);
       req_date = new Date(req_date);
       //console.log(req_date);
-      str_req_date = ""+req_date.getFullYear() + '-' + ((req_date.getMonth()+1)<10 ? '0' : '') + (req_date.getMonth()+1) + '-' + req_date.getDate();
+      str_req_date = ""+req_date.getFullYear() + '-' + ((req_date.getMonth()+1)<10 ? '0' : '') + (req_date.getMonth()+1) + '-' + ((req_date.getDate())<10 ? '0' : '') + req_date.getDate();
       htm +="<th"+((req_date.getUTCDay()==5 || req_date.getUTCDay()==6) ? " style='color:red;'" : "")+">Дата назначения "+str_req_date+"</th>";
     }
   
@@ -214,16 +214,28 @@ function load_inf_statistic(){
   let plg_regs_reassign_filter_list = JSON.parse(window.localStorage.plg_regs_reassign_filter_list);
   console.log(plg_regs_reassign_filter_list);
   let regs = [];
-  $.each(plg_regs_reassign_filter_list, function(index,value){
-    //regs.splice(regs.length,0,value.regs.split(','));
-    $.each(value.regs, function(index,value){
-        //reassigned_today[value] = 0;
-        //regs.set(value, 0);
-        //reassigned_today.length += 1;
-        $.merge(regs,[value.login]);
+  let group_count = 0;
+  for(let filter of plg_regs_reassign_filter_list){
+      if(group_count < filter.group){
+          group_count = filter.group;
+      }
+  }
+  
+  for(let group=0; group<group_count; group++){
+    $.each(plg_regs_reassign_filter_list, function(index,value){
+        if(group == value.group){
+            $.each(value.regs, function(index,value){
+                if (regs.length>0){
+                    if (regs.indexOf(value.login)<0){        
+                        $.merge(regs,[value.login]);
+                    }
+                } else {
+                    $.merge(regs,[value.login]);
+                }        
+            });
+        }
     });
-    //$.merge(regs,value.regs.split(','));
-  });
+  }
   console.log(regs);
   
   $.each(regs, function(index,value){
@@ -249,7 +261,7 @@ function load_inf_statistic(){
     for (var j=parseInt(window.localStorage.plg_regs_reassign_countdate); j>=0; j--){
       let reasign_date = new Date(select_date); 
       reasign_date = new Date(reasign_date.setDate(reasign_date.getDate() - j));
-      let str_reassign_date = ""+reasign_date.getFullYear() + '-' + ((reasign_date.getMonth()+1)<10 ? '0' : '') + (reasign_date.getMonth()+1) + '-' + reasign_date.getDate();
+      let str_reassign_date = ""+reasign_date.getFullYear() + '-' + ((reasign_date.getMonth()+1)<10 ? '0' : '') + (reasign_date.getMonth()+1) + '-' + ((reasign_date.getDate())<10 ? '0' : '') + reasign_date.getDate();
       divnums = "<div class='nums_"+str_reassign_date+"'><img src='loading.gif' alt='loading' class='loading'></div>" + divnums;      
     }
     table += divnums + "</td></tr>";    
@@ -272,7 +284,7 @@ function load_inf_statistic(){
     for (var j=parseInt(window.localStorage.plg_regs_reassign_countdate); j>=0; j--){
       let reasign_date = new Date(select_date); 
       reasign_date = new Date(reasign_date.setDate(reasign_date.getDate() - j));
-      let str_reassign_date = ""+reasign_date.getFullYear() + '-' + ((reasign_date.getMonth()+1)<10 ? '0' : '') + (reasign_date.getMonth()+1) + '-' + reasign_date.getDate();
+      let str_reassign_date = ""+reasign_date.getFullYear() + '-' + ((reasign_date.getMonth()+1)<10 ? '0' : '') + (reasign_date.getMonth()+1) + '-' + ((reasign_date.getDate())<10 ? '0' : '') + reasign_date.getDate();
       getNums(reasign_date, value, "#reg_reassigned_num_" + value + " .nums_"+str_reassign_date);
     }
   });     

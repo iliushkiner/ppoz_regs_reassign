@@ -15,15 +15,14 @@
      <div class="container">
       <h3>Настройка</h3>
       <div id="options">
-        <input id="plg_regs_reassign_reassign_enable" type="checkbox" checked="checked" name="plg_on_hover_history_enable">Включить автоматическое распределение.<br>
+        <input id="plg_regs_reassign_reassign_enable" type="checkbox" checked="checked" name="plg_on_reassign_enable">Включить автоматическое распределение.&nbsp;&nbsp;&nbsp;&nbsp;
+        <input id="plg_regs_reassign_debug_off_enable" type="checkbox" checked="checked" name="plg_debug_off_enable">Включить боевой режим.<br><br>
         <fieldset>
           <legend style='font-size: 11px'>Параметры распределения подгружаются при загрузке страницы. После изменения любого параметра требуется обновление страницы ППОЗ (CTRL + R, SHIFT + F5, F5), в которую подключется расширение.</legend>
           <fieldset>
             <legend style='font-size: 11px'>Параметры получения распределяемых обращений</legend>                
             <label style='font-size: 11px'>Ссылка</label><br>
             <input id="plg_regs_reassign_req_url" type="text" size="100%" placeholder="Ссылка получения списка обращений http://ppoz-service-bal-01.prod.egrn:9001/manager/requests"><br><br>
-            <label style='font-size: 11px'>Данные JSON отправляемые при выборке распределяемых обращений</label><br>
-            <textarea id="plg_regs_reassign_req_json" rows="2" size="100%" placeholder="JSON data отправляемая в POST запросе" style="/*height:75px; */width:100%"></textarea><br><br>
             <label style='font-size: 11px'>Статус респределяемых обращений (find_object_to_extractions, reg_validations, initial_examinations)</label><br>
             <input id="plg_regs_reassign_status" type="text" size="15" placeholder="initial_examinations"><br><br>
           </fieldset>  
@@ -41,8 +40,23 @@
             <label style='font-size: 11px'>IndexedDB JSON</label><br>
             <textarea id="plg_regs_reassign_indexeddb" rows="2" size="100%" placeholder='{"server":"regs-preregs-reassign","version":1,"schema":{"reassigns":{"key":{"keyPath":"id","autoIncrement":true},"indexes":{"reassignReg":{},"appealNumber":{},"reassignDate":{}}}}}' style="/*height:75px; */width:100%"></textarea><br>
           </fieldset><br>
-          
-          <legend style='font-size: 11px'>Список регов по типам источников поступления распределения: 'Другое';'ЕПГУ';'ИС Бизнес Сообществ';'ИС ФОИВ, РОИВ, ОМСУ, Росатом, Роскосмос';'МФЦ';'Миграция';'Официальный сайт Росреестра';'ПК ПВД';'ПК ПВД в МФЦ';'Учётные Системы'</legend>
+          <!--<label style='font-size: 11px'>Данные JSON отправляемые при выборке распределяемых обращений</label><br>
+          <textarea id="plg_regs_reassign_req_json" rows="2" size="100%" placeholder="JSON data отправляемая в POST запросе" style="/*height:75px; */width:100%"></textarea><br><br>-->
+          <legend style='font-size: 11px'>Список по порядку поиска обращений назначаемых на рега</legend>
+          <div id='plg_regs_reassign_req_json_list'></div><br>
+          <legend style='font-size: 11px'>Список обращений назначаемых на рега</legend>
+          <div id='plg_regs_reassign_appealnumber_list'></div><br>
+          <legend style='font-size: 11px'><strong>Группа</strong>: используется для группировки при выводе стаистики назначений.<br>
+              <strong>Безлимит</strong>: указывается при условий назначений определенных опращений только указанным регам, без учета лимита и количества распределения.<br>              
+              <strong>Список регов</strong>: указывается в массиве через запяту в виде <strong>[{"login":"agtanaev","percent":100,"limit":40,"include":"on"},...]</strong><br>
+              <ul>
+                  <li><strong><i>login</i></strong> - учетная запись</li>
+                  <li><strong><i>percent</i></strong> - процент назначения от общего количества</li>
+                  <li><strong><i>limit</i></strong> - максимальное количество в день назначений</li>
+                  <li><strong><i>include</i></strong> - включение в распределение, где on - включить и off - исключить</li>
+              </ul>
+              <strong>JSON фильтр</strong>: свойства подходящийх обращений. Можно посмотреть в закладке Network инструмента DevTools браузера Chrome в ответе на запрос <a href="http://ppoz-service-bal-01.prod.egrn:9001/manager/requests/byId?id=PKPVDMFC-2021-01-20-614725">http://ppoz-service-bal-01.prod.egrn:9001/manager/requests/byId?id=PKPVDMFC-2021-01-20-614725</a>
+          </legend>
           <div id='plg_regs_reassign_filter_list'></div>
           <!--<div class="row">      
             <div class="col-sm-6">
@@ -56,6 +70,10 @@
           </div>-->
         </fieldset>
       </div>
+    </div>
+    <div class="footer container">
+          <div id='plg_idexed_db_statistic'></div>
+          <p class="text-center">Copyright &copy; TEdi 2021</p>
     </div>
   </body>
 </html>

@@ -1,11 +1,14 @@
 //$(document).ready(function(){
 var timeout = 30000;
 var plg_regs_reassign_reassign_enable = false;
+var plg_regs_reassign_debug_off_enable = false;
 var url = '';
 var json = '';
+var json_list = [];
 var reg_status = '';
 var plg_regs_reassign_filter_list = [];
 var reassigned_today = new Map();
+var plg_regs_reassign_appealnumber_list ='';
 var today = new Date();
 
 let str_today = today.getFullYear() + '-' + ((today.getMonth()+1)<10 ? '0' : '') + (today.getMonth()+1) + '-' + today.getDate();
@@ -29,9 +32,12 @@ var indexeddb = {
   }
 };
 
-function check_filter(index, value, reqbyiditem){
+/**
+ * Проверяет фильтр и возвращает true если условия подходят
+ */
+function check_filter(index, value, reqbyiditem, like){
     let result = true;
-    if (index != 'array'){
+    if (index != 'array' && index != 'like'){
         /**
          * Проверка на массив. В некоторых случаях value определяется как объект вместо Array
          */
@@ -42,24 +48,56 @@ function check_filter(index, value, reqbyiditem){
         });
         
         if(/*Array.isArray(value)*/is_array){
-            result = (value.indexOf(reqbyiditem[index])>=0); 
+            if(!like){
+                result = (value.indexOf(reqbyiditem[index])>=0); 
+            } else {
+                for(let likeval of value){
+                    /**
+                     * Ищем вхождение подстроки likeval в reqbyiditem[index]
+                     */
+                    if(reqbyiditem[index] != ""){
+                        let patern = new RegExp(likeval,'g');
+                        let match = reqbyiditem[index].match(patern);
+                        result = (typeof(match) != "undefined" &&  match != null && match.length>0);
+                        if (result) break;
+                    } else {
+                        result = false;
+                        break;
+                    }
+                    
+                }
+            }
         } else if(typeof(value) === 'object'){
             $.each(value, function(vindex,vvalue){
-               result = check_filter(vindex, vvalue, reqbyiditem[vindex]); 
+               result = check_filter(vindex, vvalue, reqbyiditem[vindex], false); 
                return result;
             });
         }
+    }else if(index == 'like'){
+        console.log("UPS LIKE!");
+        $.each(value, function(vindex,vvalue){
+            result = (result && check_filter(vindex, vvalue, reqbyiditem, true)); 
+            return !result;
+            /*if (!result) {
+                break;
+            }*/
+        });
     } else {
         //for(let filter of value.array){
         $.each(value, function(vindex,vvalue){
-            for(let reqbyid_arrayitem of reqbyiditem[vindex]){
+            if (reqbyiditem[vindex].length > 0){
+              for(let reqbyid_arrayitem of reqbyiditem[vindex]){
                 $.each(vvalue, function(vvindex,vvvalue){
-                    result = check_filter(vvindex, vvalue[vvindex], reqbyid_arrayitem); 
+                    result = (result && check_filter(vvindex, vvalue[vvindex], reqbyid_arrayitem, false)); 
                     return result;
-                    /*if (!result) {
-                        break;
-                    }*/
                 });
+                if (result) {
+                    break;
+                }
+              }
+            } else {
+              result = false; 
+              return result;
             }
         });
     }
@@ -71,8 +109,13 @@ function check_JSON_Filter(json_filter, reqbyid){
     //console.log("reqbyid",reqbyid);
     let filterstatus = true;
     for(let filter of json_filter){
+        filterstatus = true;
         $.each(filter, function(index,value){
-           filterstatus = check_filter(index, value, reqbyid);//(value.indexOf(reqbyid[index])>=0); 
+           filterstatus = (filterstatus && check_filter(index, value, reqbyid, false));//(value.indexOf(reqbyid[index])>=0); 
+           /**
+            * выход если параметр фильтра не соответствует обращению.
+            * выход из $.each return false;
+            */
            return filterstatus;
         });        
         if (filterstatus) {
@@ -129,11 +172,11 @@ function getCount(reassignDate, reassignReg){
       if (r != null && r.length > 0){
         //reg = r.length;
         //reassigned_today[reassignReg] = r.length;
-        reassigned_today.set(reassignReg, {"count": r.length, "limit": reassigned_today.get(reassignReg).limit});
+        reassigned_today.set(reassignReg, {"count": r.length, "percent": reassigned_today.get(reassignReg).percent, "limit": reassigned_today.get(reassignReg).limit});
       } else {
         //reg = 0;
         //reassigned_today[reassignReg] = 0;
-        reassigned_today.set(reassignReg, {"count": 0, "limit": reassigned_today.get(reassignReg).limit});
+        reassigned_today.set(reassignReg, {"count": 0, "percent": reassigned_today.get(reassignReg).percent, "limit": reassigned_today.get(reassignReg).limit});
       }
     });
   });
@@ -152,16 +195,26 @@ var server;
   console.log("timeout:",timeout);
   
   plg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
-  plg_regs_reassign_reassign_enable = Object.values(plg_regs_reassign_reassign_enable)[0];
+  plg_regs_reassign_reassign_enable = Object.values(plg_regs_reassign_reassign_enable);
+  plg_regs_reassign_reassign_enable = (typeof(plg_regs_reassign_reassign_enable[0]) != "undefined" ? plg_regs_reassign_reassign_enable[0] : false);
   console.log("plg_regs_reassign_reassign_enable:",plg_regs_reassign_reassign_enable);
+  
+  plg_regs_reassign_debug_off_enable = await getLocalStorageValue('plg_regs_reassign_debug_off_enable');
+  plg_regs_reassign_debug_off_enable = Object.values(plg_regs_reassign_debug_off_enable);
+  plg_regs_reassign_debug_off_enable = (typeof(plg_regs_reassign_debug_off_enable[0]) != "undefined" ? plg_regs_reassign_debug_off_enable[0] : false);
+  console.log("plg_regs_reassign_debug_off_enable:",plg_regs_reassign_debug_off_enable);
   
   url = await getLocalStorageValue('plg_regs_reassign_req_url');
   url = Object.values(url)[0];
   console.log("url:",url);
   
-  json = await getLocalStorageValue('plg_regs_reassign_req_json');
+  json_list = await getLocalStorageValue('plg_regs_reassign_req_json_list');
+  json_list = JSON.parse(Object.values(json_list)[0]);
+  console.log("json_list:",json_list);
+  
+  /*json = await getLocalStorageValue('plg_regs_reassign_req_json');
   json = Object.values(json)[0];
-  console.log("json:",json);
+  console.log("json:",json);*/
   
   reg_status = await getLocalStorageValue('plg_regs_reassign_status');
   reg_status = ((typeof(reg_status) != "undefined" && Object.values(reg_status) != null && Object.values(reg_status)[0] != "") ? Object.values(reg_status)[0] : "initial_examinations");  
@@ -175,12 +228,16 @@ var server;
   plg_regs_reassign_filter_list = await getLocalStorageValue('plg_regs_reassign_filter_list');
   plg_regs_reassign_filter_list = JSON.parse(Object.values(plg_regs_reassign_filter_list)[0]);
   console.log("plg_regs_reassign_filter_list:",plg_regs_reassign_filter_list);
+  
+  plg_regs_reassign_appealnumber_list = await getLocalStorageValue('plg_regs_reassign_appealnumber_list');
+  plg_regs_reassign_appealnumber_list = JSON.parse(Object.values(plg_regs_reassign_appealnumber_list)[0]);    
+  console.log("plg_regs_reassign_appealnumber_list:",plg_regs_reassign_appealnumber_list);
 
   if(reassigned_today.size <= 0){
     $.each(plg_regs_reassign_filter_list, function(index,value){
       $.each(value.regs, function(index,value){
         //reassigned_today[value] = 0;
-        reassigned_today.set(value.login, {"count": 0, "limit": typeof(value.limit) != "undefined" ? value.limit : 0});
+        reassigned_today.set(value.login, {"count": 0, "percent": value.percent, "limit": typeof(value.limit) != "undefined" ? value.limit : 0});
         //reassigned_today.length += 1;
         let reasign_date = new Date(today);
         getCount(reasign_date, value.login);
@@ -204,8 +261,11 @@ var server;
   let reassigned_today = 0; 
   reassigned_today = await getCount(reasign_date,'naushakova');
   console.log("naushakova: ",reassigned_today);*/
- 
+    
   setInterval(function (){
+    /**
+     * Не ассинхронный AJAX POST запрос
+     */
     function postAjaxData(url, json){
       var result = "";
       $.ajax({
@@ -223,6 +283,9 @@ var server;
       return result
     }
     
+    /**
+     * Не ассинхронный AJAX GET запрос
+     */
     function getAjaxData(url){
       var result = "";
       $.ajax({
@@ -236,18 +299,71 @@ var server;
         } 
       });
       return result
-    } 
+    }
+    
+    /**
+     * Функция распределения обращения
+     */
+    function reassign_appealnumber(reqbyid, reg_status, login){
+        //let reassignjson = {requestNumbers:[req_item.appealNumber],role:role,user:tmp_regs[reg_index_min_count].login};
+        //{"requestNumbers":["PKPVDMFC-2020-12-30-367882"],"role":"PKURP_PREREG","user":"osradzhabova"}
+        let role = (reg_status == "find_object_to_extractions" ? "PKURP_INFO" : (reg_status == "reg_validations" ? "PKURP_REG" : "PKURP_PREREG"));
+        let reassignjson = {requestNumbers:[reqbyid.appealNumber],role:role,user:login};
+        console.log("Регистратор подобран. JSON data запроса переназначения:",reassignjson);
+        /**
+        * назначение на выбранного рега
+        */
+        let freassigned = false;
+        if (plg_regs_reassign_debug_off_enable){
+            let reassignreq = postAjaxData('http://ppoz-service-bal-01.prod.egrn:9001/manager/assign/reassign',reassignjson);
+            console.log("Запос вернул", reassignreq);
+            freassigned = true;
+        } else {
+            freassigned = true;
+        }
+    
+                                            
+        let count_kuvd = [];
+        for(var j=0; j<reqbyid.statements.length; j++){
+            if(count_kuvd.length>0){
+                if ($.inArray(reqbyid.statements[j].idKUVDRecord, count_kuvd) < 0){
+                    count_kuvd.push(reqbyid.statements[j].idKUVDRecord);
+                }
+            } else {
+                count_kuvd.push(reqbyid.statements[j].idKUVDRecord);
+            }
+        }
+        //console.log("Список заявлений: ",count_kuvd);
+        
+        /**
+        *Запись о назначение в IndexedDB
+        **/
+        var db = new exDB();
+        db.open(indexeddb, function () {
+            db.table("reassigns").add({
+                reassignReg: login,
+                appealNumber: reqbyid.appealNumber,
+                reassignDate: (new Date().getTime()), //время в милисекундах (1сек - 1000 мсек) от 1 января 1970 г. 00:00:00 по UTC
+                kuvdCount: count_kuvd.length
+                },function(r){
+                    console.log("Запись в IndexedDB",r);
+                }
+            );
+        });                      
+        return freassigned;  
+    }
         
     if(document.webkitVisibilityState == 'visible'){      
       //let plg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
       if(plg_regs_reassign_reassign_enable == true){
+       for(let json_item of json_list){
         /**
          *Получаем распределяемые обращения.
          **/
         $.ajax({
           url: url,
           dataType: "json",
-          data: json/*JSON.stringify(json)*/,
+          data: JSON.stringify(json_item)/*json/*JSON.stringify(json)*/,
           method: "POST",
           contentType: "application/json;charset=UTF-8",
           async: true,
@@ -274,7 +390,7 @@ var server;
               if(reassigned_today.size <= 0){
                 $.each(plg_regs_reassign_filter_list, function(index,value){
                   $.each(value.regs, function(index,value){ 
-                    reassigned_today.set(value.login, 0);
+                    reassigned_today.set(value.login, {"count": 0, "percent": value.percent, "limit": typeof(value.limit) != "undefined" ? value.limit : 0});
                   });
                 });              
               }
@@ -293,10 +409,12 @@ var server;
                 let reg_list_item = [];
                 
                 for(let reg of value.regs){
+                  if(typeof(reg.include) == "undefined" || reg.include != "off"){
                     reg_list_item.push(reg.login);                        
+                  }
                 }
                         
-                $.each(reg_list_item, function(reg_index,reg_item){
+                $.each(reg_list_item, function(reg_index,reg_item){                  
                   //console.log(reg_item);
                   //            {"pageNumber":0,"pageSize":10,"statuses":["reg_validations"],"executionDate":{"dateFrom":"2020-12-31","dateTo":"2020-12-31"},"subjectRF":["12"],"executorDepartments":["12.053"],"executors":["asianeev"],"byActiveExecutor":true}
                   let regjson = {pageNumber:0,pageSize:1000,statuses:[reg_status],executors:[reg_item],byActiveExecutor:true};
@@ -310,7 +428,7 @@ var server;
                     count_date[date] = (typeof(count_date[date]) == "undefined" ? 1 : count_date[date] + 1);                  
                   });
                   
-                  let reg = {login: reg_item, count: req.requests.length, today: reasign_date, /*reassigned_today: reassigned_today[reg_item],*/ count_date: count_date};
+                  let reg = {login: reg_item, unlim: (typeof(value.unlim) != "undefined" && value.unlim), count: req.requests.length, today: reasign_date, /*reassigned_today: reassigned_today[reg_item],*/ count_date: count_date};
                   
                   /**
                    *поиск и вставка рега по возрастанию исходя из колличества обращений
@@ -327,11 +445,11 @@ var server;
                   }
                   if(insertindex < 0){
                     regs.push(reg);
-                  }                                                                                          
+                  }
                 });
 
                 /**
-                 *вставка скиска регов по источнику поступлений
+                 *вставка скиска регов по параметрам фильтра
                 **/
                 reg_list.push({group:value.group,json_filter:value.json_filter, regs: regs});
                                                                 
@@ -352,174 +470,150 @@ var server;
                 console.log("Обращение",reqbyid);
                 
                 /**
-                 *подбираем рега для назначения
-                **/
-                console.log("<----------------Перебор условия фильтров---------------->");
-                $.each(reg_list, function(index,reg_list_item){                  
-                  //console.log("Категория регов с соответствующими свойствами обращения");
-                  //console.log("JSON фильтр",reg_list_item);
-                  /*let json_filter_match = reg_list_item.json_filter.match(/"'"+reqbyid.senderName+"'"/g);
-                  console.log(json_filter_match);*/
+                 * Поиск и назначение из списока обращений назначаемых на рега 
+                 */
+                for(let appealnumber_item of plg_regs_reassign_appealnumber_list){
+                    if(reqbyid.appealNumber === appealnumber_item.appealnumber){
+                        reassigned = reassign_appealnumber(reqbyid, reg_status, appealnumber_item.reg);
+                        reassigned_today.set(appealnumber_item.reg, {"count":reassigned_today.get(appealnumber_item.reg).count + 1,"limit":reassigned_today.get(appealnumber_item.reg).limit});
+                        //console.log("Колличество после назначения:",tmp_regs);
+                        break;
+                    }
+                }                
+                if (!reassigned){
                   /**
-                   *Выбор списка регов по источнику поступления или другому признаку деления пользователей.                  
+                   *подбираем рега для назначения
                   **/
-                  //if(reg_list_item.json_filter.indexOf("'"+reqbyid.senderName+"'")>=0){
-                  if(check_JSON_Filter(reg_list_item.json_filter,reqbyid) === true){
-                    console.log("Категория предварительно подобрана.");
-                    console.log("JSON фильтр",reg_list_item);
+                  console.log("<----------------Перебор условия фильтров---------------->");
+                  let tmp_regs = [];
+                  console.log("Собираем список регов из подхлдящийх категорий фильтров.");
+                  $.each(reg_list, function(index,reg_list_item){                  
+                    //console.log("Категория регов с соответствующими свойствами обращения");
+                    //console.log("JSON фильтр",reg_list_item);
+                    /*let json_filter_match = reg_list_item.json_filter.match(/"'"+reqbyid.senderName+"'"/g);
+                    console.log(json_filter_match);*/
                     /**
-                     *поиск рега с наименьшим количеством на дату исполнения по регламенту распределяемого обращения
+                     *Выбор списка регов по источнику поступления или другому признаку деления пользователей.                  
+                    **/
+                    //if(reg_list_item.json_filter.indexOf("'"+reqbyid.senderName+"'")>=0){                                    
+                    if(check_JSON_Filter(reg_list_item.json_filter,reqbyid) === true){
+                      console.log("Категория предварительно подобрана.");
+                      console.log("JSON фильтр",reg_list_item);
+                      /**
+                       * Собираем список регов в tmp_regs если лимит не исчерпан
+                       */
+                      $.each(reg_list_item.regs, function(reg_index,reg_item){
+                          if (reg_item.unlim || reassigned_today.get(reg_item.login).limit > reassigned_today.get(reg_item.login).count || reassigned_today.get(reg_item.login).limit === 0){
+                              tmp_regs.push(reg_item);
+                          }
+                      });
+                    }
+                  });
+                  console.log("Предварительный список регов учитывая limit:", tmp_regs);
+                  let unlim = false;
+                  for(let tmp_regs_item of tmp_regs){
+                      unlim = tmp_regs_item.unlim;
+                      if (unlim) break;
+                  }
+                                    
+                  if(unlim){
+                    let reg_index = 0;
+                    while (tmp_regs.length>reg_index){
+                        let login = tmp_regs[reg_index].login;
+                        if (!tmp_regs[reg_index].unlim){
+                            tmp_regs.splice(reg_index,1);
+                        } else {
+                            reg_index++;
+                        }
+                    }
+                    console.log("Cписок регов после проверки на unlim:", tmp_regs);
+                  }
+                  /**
+                   * Убираем регов по проценту назначения если количество не соответствует.
+                   * Сначало находим колличество обращений соответствующее 100%-ам назначенных за сегодня по регу.
+                   */                  
+                  let reassigned_today_max_count = 0;
+                  $.each(tmp_regs, function(reg_index,reg_item){
+                    if (reassigned_today.get(reg_item.login).count > reassigned_today_max_count){                        
+                        reassigned_today_max_count = reassigned_today.get(reg_item.login).count;
+                    }
+                  });
+                  let reg_index = 0;
+                  while (tmp_regs.length>reg_index){
+                    let login = tmp_regs[reg_index].login;
+                    if (!tmp_regs[reg_index].unlim && reassigned_today.get(login).count > (reassigned_today.get(login).percent/100) * reassigned_today.get(login).count){
+                        tmp_regs.splice(reg_index,1);
+                    } else {
+                        reg_index++;
+                    }
+                  }                
+                  console.log("Подобранные реги после чистки по %:",tmp_regs);
+                  
+                  if (tmp_regs.length>0){
+                    /**
+                     *Поиск рега с наименьшим количеством на дату исполнения по регламенту распределяемого обращения
                     **/
                     let reg_index_min_count = -1;
-                    let reg_date_min_count = 9999;
-                    
-                    if (plg_regs_preregs_reassign_type == "result"){                     
-                      $.each(reg_list_item.regs, function(reg_index,reg_item){
-                        reg_item.count_date[date] = (typeof(reg_item.count_date[date]) == "undefined" ? 0 : reg_item.count_date[date]);
-                        if (reg_item.count_date[date] < reg_date_min_count){
-                          reg_date_min_count = reg_item.count_date[date];
-                          reg_index_min_count = reg_index;  
-                        }                      
-                      });
-                    } else {                                    
-
-                      let reassigned_today_min_count = 9999;
-                      /*$.each(reassigned_today, function(index,value){
-                        if (value < reassigned_today_min_count){
-                          reassigned_today_min_count = value;
-                        }
-                      });*/
-                      let tmp_regs = [];
-                      $.each(reg_list, function(tmp_index,tmp_reg_list_item){
-                        if (reg_list_item.group === tmp_reg_list_item.group){
-                            for(let value of tmp_reg_list_item.regs){
-                                if (typeof(value.limit) != "undefined"){
-                                    if (reassigned_today.get(value.login) < value.limit){
-                                        tmp_regs.push(value.login);
-                                    }
-                                } else {
-                                    tmp_regs.push(value.login);                        
+                    let reg_date_min_count = 9999;                    
+                    if (plg_regs_preregs_reassign_type == "result"){
+                        /**
+                         * Получаем рега с минимальным количеством обращений на дату исполнения по регламенту распределяемого обращения.
+                         */
+                        $.each(tmp_regs, function(reg_index,reg_item){
+                            reg_item.count_date[date] = (typeof(reg_item.count_date[date]) == "undefined" ? 0 : reg_item.count_date[date]);
+                            if (reg_item.count_date[date] < reg_date_min_count){
+                                reg_date_min_count = reg_item.count_date[date];
+                                reg_index_min_count = reg_index;  
+                            }                      
+                        });
+                    } else {
+                        /**
+                         * Получаем мнимальное назначенных в текущий момент.                         
+                         */
+                        let reassigned_today_min_count = 9999;
+                        $.each(tmp_regs, function(reg_index,reg_item){
+                            //for(let key of reassigned_today.keys()){                        
+                                if (reassigned_today.get(reg_item.login).count < reassigned_today_min_count){                        
+                                    reassigned_today_min_count = reassigned_today.get(reg_item.login).count;
                                 }
-                            }   
-                        }
-                      });
-                      
-                      for(let key of reassigned_today.keys()){                        
-                        if (reassigned_today.get(key) < reassigned_today_min_count && $.inArray(key, tmp_regs) >= 0){                        
-                          reassigned_today_min_count = reassigned_today.get(key).count;
-                        }
-                      }                      
-
-                      let reg_date_min_count = 9999;
-                                            
-                      $.each(reg_list_item.regs, function(reg_index,reg_item){                        
-                        reg_item.count_date[date] = (typeof(reg_item.count_date[date]) == "undefined" ? 0 : reg_item.count_date[date]);
-                        if (reg_item.count_date[date] < reg_date_min_count && reassigned_today_min_count == reassigned_today.get(reg_item.login).count/*reassigned_today[reg_item.login]*/){
-                          reg_date_min_count = reg_item.count_date[date];
-                          reg_index_min_count = reg_index;  
-                        }                      
-                      });
-
-                      //let reglogin = reg_list_item.regs[reg_index_min_count].login;
-
+                            //}
+                        });
+                        /**
+                         * Получаем рега с минимальным количеством обращений на дату исполнения регламенту распределяемого обращения.
+                         * Проверяются только те у которых меньше всех назначенных обращений за сегодня.
+                         */
+                        let reg_date_min_count = 9999;
+                        $.each(tmp_regs, function(reg_index,reg_item){                        
+                            reg_item.count_date[date] = (typeof(reg_item.count_date[date]) == "undefined" ? 0 : reg_item.count_date[date]);
+                            if (reg_item.count_date[date] < reg_date_min_count && reassigned_today_min_count == reassigned_today.get(reg_item.login).count/*reassigned_today[reg_item.login]*/){
+                                reg_date_min_count = reg_item.count_date[date];
+                                reg_index_min_count = reg_index;  
+                            }                      
+                        });
                     }
                     /**
                      *назначение обращения на подобранного рега
                     **/
                     if (reg_index_min_count >= 0){
-                      reg_list_item.regs[reg_index_min_count].count_date[date] = reg_list_item.regs[reg_index_min_count].count_date[date] + 1;                      
-                      //console.log("Подобранный рег",reg_list_item.regs[reg_index_min_count]);                      
-                      //{"requestNumbers":["PKPVDMFC-2020-12-30-367882"],"role":"PKURP_PREREG","user":"osradzhabova"}
-                      let role = (reg_status == "find_object_to_extractions" ? "PKURP_INFO" : (reg_status == "reg_validations" ? "PKURP_REG" : "PKURP_PREREG"));
-                      let reassignjson = {requestNumbers:[req_item.appealNumber],role:role,user:reg_list_item.regs[reg_index_min_count].login};
-                      console.log("Регистратор подобран. JSON data запроса переназначения:",reassignjson);
-                      /**
-                       * назначение на выбранного рега
-                       */
-                      /*let reassignreq = postAjaxData('http://ppoz-service-bal-01.prod.egrn:9001/manager/assign/reassign',reassignjson);
-                      console.log("Запос вернул", reassignreq);
-                      */
-                      reassigned = true;
-                      console.log("Колличество после назначения:",reg_list_item);
-                      
-                      
-                      //reassigned_today[reg_list_item.regs[reg_index_min_count].login] = reassigned_today[reg_list_item.regs[reg_index_min_count].login] + 1;
-                      reassigned_today.set(reg_list_item.regs[reg_index_min_count].login, {"count":reassigned_today.get(reg_list_item.regs[reg_index_min_count].login).count + 1,"limit":reassigned_today.get(reg_list_item.regs[reg_index_min_count].login).limit});
-                      
-                      let count_kuvd = [];
-                      /*$.each(reqbyid, function(index,item){                                            
-                        if(count_kuvd.length>0){
-                          if ($.inArray(item.idKUVDRecord, count_kuvd) < 0){
-                            count_kuvd.push(item.idKUVDRecord);
-                          }
-                        } else {
-                          count_kuvd.push(item.idKUVDRecord);
-                        }                        
-                      });*/
-                      for(var j=0; j<reqbyid.statements.length; j++){
-                        if(count_kuvd.length>0){
-                          if ($.inArray(reqbyid.statements[j].idKUVDRecord, count_kuvd) < 0){
-                            count_kuvd.push(reqbyid.statements[j].idKUVDRecord);
-                          }
-                        } else {
-                          count_kuvd.push(reqbyid.statements[j].idKUVDRecord);
-                        }
-                      }
-                      //console.log("Список заявлений: ",count_kuvd);
-                      
-                      /**
-                       *Запись о назначение в IndexedDB
-                      **/
-                      /*chrome.runtime.sendMessage({"cmd": "open", "params": indexeddb}, function (result) {
-                        if (result && result.RUNTIME_ERROR) {
-                          console.error(result.RUNTIME_ERROR.message);
-                          result = null;
-                        }
-                      });*/
-                      /*chrome.runtime.sendMessage({
-                          reassignReg: reg_list_item.regs[reg_index_min_count].login,
-                          appealNumber: req_item.appealNumber,
-                          reassignDate: new Date(),
-                          kuvdCount: count_kuvd.length
-                        }, function (result) {
-                        if (result && result.RUNTIME_ERROR) {
-                          console.error(result.RUNTIME_ERROR.message);
-                          result = null;
-                        }
-                      });*/
-                      
-                      var db = new exDB();
-                      db.open(indexeddb, function () {
-                        db.table("reassigns").add({
-                          reassignReg: reg_list_item.regs[reg_index_min_count].login,
-                          appealNumber: req_item.appealNumber,
-                          reassignDate: (new Date().getTime()), //время в милисекундах (1сек - 1000 мсек) от 1 января 1970 г. 00:00:00 по UTC
-                          kuvdCount: count_kuvd.length
-                        },function(r){
-                          /*if(r.length>0){
-                            console.log("Запись в IndexedDB",r[0]);
-                          } else {
-                            console.log("Запись в IndexedDB",r);  
-                          }*/
-                          console.log("Запись в IndexedDB",r);
-                          /*db.close(function(){
-                            //console.log("closed");
-                          }); */
-                        });
-                      });                      
-                    }/* else {
-                       console.log("По обращение не подобрпн рег:",req_item); 
-                    }*/                     
-                    //break();
-                    if (!reassigned){
-                        console.log("??????????В списке регов фильтра не нашлось пользователя данной категории(либо лимит исчерпан, либо ошибка). Перходим на следующий фильтр по приоритету.??????????");
-                    } else {
-                        return false;
+                        tmp_regs[reg_index_min_count].count_date[date] = tmp_regs[reg_index_min_count].count_date[date] + 1;                      
+                        /**
+                         * Проставляем в списоке фильтров актуальное количество назначеных обращений
+                         */
+                        /*$.each(reg_list, function(index,reg_list_item){
+                            $.each(reg_list_item.regs, function(reg_index,reg_item){
+                                if(reg_item.login === reg_list[index].regs[reg_index].login){
+                                    reg_list[index].regs[reg_index].count_date[date] = tmp_regs[reg_index_min_count].count_date[date];                      
+                                }
+                            });                            
+                        });*/
+                        
+                        //console.log("Подобранный рег",tmp_regs[reg_index_min_count]);
+                        reassigned = reassign_appealnumber(reqbyid, reg_status, tmp_regs[reg_index_min_count].login);
+                        reassigned_today.set(tmp_regs[reg_index_min_count].login, {"count":reassigned_today.get(tmp_regs[reg_index_min_count].login).count + 1,"limit":reassigned_today.get(tmp_regs[reg_index_min_count].login).limit});
+                        console.log("Колличество после назначения:",tmp_regs);
                     }
-                  } else {
-                    
-                  } 
-                });
+                  }
+                }
                 if (reassigned === false){
                     console.log("!!!!!!!!!!!По обращению не подобрана категория регов.!!!!!!!!!!!"); 
                 }
@@ -529,6 +623,7 @@ var server;
             //$(selctor).html(data.requests.length);
           } 
         });
+       }
       }    
     }
   }, timeout);
