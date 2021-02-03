@@ -13,3 +13,12 @@
   height: 400px;
   overflow: scroll;
 } 
+
+.count {
+    text-align: center;
+}
+
+td[class^=date] {
+    text-align: center;
+    /* margin-right: 15px; */
+}

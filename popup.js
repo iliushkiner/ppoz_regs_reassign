@@ -17,10 +17,10 @@ var indexeddb = {
   }
 };
 
-indexeddb = JSON.parse(window.localStorage.plg_regs_reassign_indexeddb);
+indexeddb = (typeof(window.localStorage.plg_regs_reassign_indexeddb) != "undefined" ? JSON.parse(window.localStorage.plg_regs_reassign_indexeddb) : indexeddb);
 //indexeddb = JSON.parse(Object.values(indexeddb_json)[0]);
 
-var reg_status = window.localStorage.plg_regs_reassign_status;
+var reg_status = (typeof(window.localStorage.plg_regs_reassign_status) != "undefined") ? (window.localStorage.plg_regs_reassign_status) : "initial_examinations";
 
 function getQuota(db){
   db.getUsageAndQuota(function(r){
@@ -106,7 +106,15 @@ function getAjaxData(url, selctor, json){
     success: function(data) {
       //console.log(data);
       //result = data;
-      $(selctor).html(data.requests.length);
+      //$(selctor).html(data.requests.length);
+      let count = ($(selctor).html() != '<img src="loading.gif" alt="loading" class="loading">' ? parseInt($(selctor+" .count").html()) : 0);      
+      if (data.requests.length>0){
+        $(selctor).html("<span class='count'>" + (count + data.requests.length) + "</count><img src='loading.gif' alt='loading' class='loading'>");
+        json.pageNumber++;
+        getAjaxData(url, selctor, json)
+      } else {
+        $(selctor).html("<span class='count'>" + (count) + "</count>");
+      }
     } 
   });
 }
@@ -211,17 +219,17 @@ function load_inf_statistic(){
   
   htm +="</tr><theader>";
  
-  let plg_regs_reassign_filter_list = JSON.parse(window.localStorage.plg_regs_reassign_filter_list);
+  let plg_regs_reassign_filter_list = (typeof(window.localStorage.plg_regs_reassign_filter_list) != "undefined" ? JSON.parse(window.localStorage.plg_regs_reassign_filter_list) : []);
   console.log(plg_regs_reassign_filter_list);
   let regs = [];
-  let group_count = 0;
+  let group_count = -1;
   for(let filter of plg_regs_reassign_filter_list){
       if(group_count < filter.group){
           group_count = filter.group;
       }
   }
   
-  for(let group=0; group<group_count; group++){
+  for(let group=0; group<=group_count; group++){
     $.each(plg_regs_reassign_filter_list, function(index,value){
         if(group == value.group){
             $.each(value.regs, function(index,value){

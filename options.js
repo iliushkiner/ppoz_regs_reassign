@@ -290,14 +290,17 @@ $(document).ready(function(){
     }); 
   });
        
-  $('#plg_type_equal')[0].checked = (window.localStorage.plg_regs_preregs_reassign_type == "equal");
-  $('#plg_type_result')[0].checked = (window.localStorage.plg_regs_preregs_reassign_type == "result");
+  $('#plg_type_equal')[0].checked = (window.localStorage.plg_regs_reassign_type == "equal");
+  $('#plg_type_result')[0].checked = (window.localStorage.plg_regs_reassign_type == "result");
+  if(typeof(window.localStorage.plg_regs_reassign_type) == "undefined"){
+      $('#plg_type_result')[0].checked = true;
+  }
 
   $('body').on('click', 'input[name="plg_type"]', function(){
-    let plg_regs_preregs_reassign_type = $('input[name="plg_type"]:checked').val();
-    window.localStorage.plg_regs_preregs_reassign_type = plg_regs_preregs_reassign_type;
-    chrome.storage.local.set({plg_regs_preregs_reassign_type: plg_regs_preregs_reassign_type}, function(){
-            console.log(plg_regs_preregs_reassign_type);
+    let plg_regs_reassign_type = $('input[name="plg_type"]:checked').val();
+    window.localStorage.plg_regs_reassign_type = plg_regs_reassign_type;
+    chrome.storage.local.set({plg_regs_reassign_type: plg_regs_reassign_type}, function(){
+            console.log(plg_regs_reassign_type);
     }); 
   });
    

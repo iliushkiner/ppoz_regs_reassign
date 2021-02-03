@@ -1,11 +1,12 @@
 //$(document).ready(function(){
-var timeout = 30000;
+var timeout = 60000;
 var plg_regs_reassign_reassign_enable = false;
 var plg_regs_reassign_debug_off_enable = false;
-var url = '';
+var url = 'http://ppoz-service-bal-01.prod.egrn:9001/manager/requests';
 var json = '';
 var json_list = [];
-var reg_status = '';
+var reg_status = "initial_examinations";
+var plg_regs_reassign_type = "result";
 var plg_regs_reassign_filter_list = [];
 var reassigned_today = new Map();
 var plg_regs_reassign_appealnumber_list ='';
@@ -187,50 +188,49 @@ function getCount(reassignDate, reassignReg){
 var server;
   
   let indexeddb_json = await getLocalStorageValue('plg_regs_reassign_indexeddb');
-  indexeddb = JSON.parse(Object.values(indexeddb_json)[0]);
+  indexeddb = typeof(Object.values(indexeddb_json)[0]) != "undefined" ? JSON.parse(Object.values(indexeddb_json)[0]) : indexeddb;
   console.log("indexeddb:",indexeddb);
   
-  timeout = await getLocalStorageValue('plg_regs_reassign_timeout');
-  timeout = ((typeof(timeout) != "undefined" && Object.values(timeout) != null && Object.values(timeout)[0] != "") ? parseInt(Object.values(timeout)[0]) : 60000);
+  let tmptimeout = await getLocalStorageValue('plg_regs_reassign_timeout');
+  timeout = (Object.values(tmptimeout).length>0 ? parseInt(Object.values(tmptimeout)[0]) : timeout);
   console.log("timeout:",timeout);
   
-  plg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
-  plg_regs_reassign_reassign_enable = Object.values(plg_regs_reassign_reassign_enable);
-  plg_regs_reassign_reassign_enable = (typeof(plg_regs_reassign_reassign_enable[0]) != "undefined" ? plg_regs_reassign_reassign_enable[0] : false);
+  let tmpplg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
+  tmpplg_regs_reassign_reassign_enable = Object.values(plg_regs_reassign_reassign_enable);
+  plg_regs_reassign_reassign_enable = (typeof(tmpplg_regs_reassign_reassign_enable[0]) != "undefined" ? tmpplg_regs_reassign_reassign_enable[0] : plg_regs_reassign_reassign_enable);
   console.log("plg_regs_reassign_reassign_enable:",plg_regs_reassign_reassign_enable);
   
-  plg_regs_reassign_debug_off_enable = await getLocalStorageValue('plg_regs_reassign_debug_off_enable');
-  plg_regs_reassign_debug_off_enable = Object.values(plg_regs_reassign_debug_off_enable);
-  plg_regs_reassign_debug_off_enable = (typeof(plg_regs_reassign_debug_off_enable[0]) != "undefined" ? plg_regs_reassign_debug_off_enable[0] : false);
+  let tmpplg_regs_reassign_debug_off_enable = await getLocalStorageValue('plg_regs_reassign_debug_off_enable');
+  plg_regs_reassign_debug_off_enable = (typeof(Object.values(tmpplg_regs_reassign_debug_off_enable)[0]) != "undefined" ? tmpplg_regs_reassign_debug_off_enable[0] : plg_regs_reassign_debug_off_enable);
   console.log("plg_regs_reassign_debug_off_enable:",plg_regs_reassign_debug_off_enable);
   
-  url = await getLocalStorageValue('plg_regs_reassign_req_url');
-  url = Object.values(url)[0];
+  let tmpurl = await getLocalStorageValue('plg_regs_reassign_req_url');
+  url = typeof(Object.values(tmpurl)[0]) != "undefined" ? Object.values(tmpurl)[0] : url;
   console.log("url:",url);
   
   json_list = await getLocalStorageValue('plg_regs_reassign_req_json_list');
-  json_list = JSON.parse(Object.values(json_list)[0]);
+  json_list = typeof(Object.values(json_list)[0]) != "undefined" ? JSON.parse(Object.values(json_list)[0]) : [];
   console.log("json_list:",json_list);
   
   /*json = await getLocalStorageValue('plg_regs_reassign_req_json');
   json = Object.values(json)[0];
   console.log("json:",json);*/
   
-  reg_status = await getLocalStorageValue('plg_regs_reassign_status');
-  reg_status = ((typeof(reg_status) != "undefined" && Object.values(reg_status) != null && Object.values(reg_status)[0] != "") ? Object.values(reg_status)[0] : "initial_examinations");  
+  let tmpreg_status = await getLocalStorageValue('plg_regs_reassign_status');
+  reg_status = ((typeof(Object.values(tmpreg_status)[0]) != "undefined") ? Object.values(reg_status)[0] : reg_status);  
   //console.log(reg_status);
   console.log("reg_status:",reg_status);
   
-  plg_regs_preregs_reassign_type = await getLocalStorageValue('plg_regs_preregs_reassign_type');
-  plg_regs_preregs_reassign_type = Object.values(plg_regs_preregs_reassign_type)[0];
-  console.log("plg_regs_preregs_reassign_type:",plg_regs_preregs_reassign_type);
+  let tmpplg_regs_reassign_type = await getLocalStorageValue('plg_regs_reassign_type');
+  plg_regs_reassign_type = (typeof(Object.values(tmpplg_regs_reassign_type)[0]) != "undefined")  ? Object.values(tmpplg_regs_reassign_type)[0] : plg_regs_reassign_type;
+  console.log("plg_regs_reassign_type:",plg_regs_reassign_type);
   
   plg_regs_reassign_filter_list = await getLocalStorageValue('plg_regs_reassign_filter_list');
-  plg_regs_reassign_filter_list = JSON.parse(Object.values(plg_regs_reassign_filter_list)[0]);
+  plg_regs_reassign_filter_list = (Object.values(plg_regs_reassign_filter_list).length>0) ? JSON.parse(Object.values(plg_regs_reassign_filter_list)[0]) : [];
   console.log("plg_regs_reassign_filter_list:",plg_regs_reassign_filter_list);
   
   plg_regs_reassign_appealnumber_list = await getLocalStorageValue('plg_regs_reassign_appealnumber_list');
-  plg_regs_reassign_appealnumber_list = JSON.parse(Object.values(plg_regs_reassign_appealnumber_list)[0]);    
+  plg_regs_reassign_appealnumber_list = (Object.values(plg_regs_reassign_appealnumber_list).length>0) ? JSON.parse(Object.values(plg_regs_reassign_appealnumber_list)[0]) : [];    
   console.log("plg_regs_reassign_appealnumber_list:",plg_regs_reassign_appealnumber_list);
 
   if(reassigned_today.size <= 0){
@@ -555,7 +555,7 @@ var server;
                     **/
                     let reg_index_min_count = -1;
                     let reg_date_min_count = 9999;                    
-                    if (plg_regs_preregs_reassign_type == "result"){
+                    if (plg_regs_reassign_type == "result"){
                         /**
                          * Получаем рега с минимальным количеством обращений на дату исполнения по регламенту распределяемого обращения.
                          */
