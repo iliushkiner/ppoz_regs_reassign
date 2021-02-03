@@ -218,7 +218,7 @@ var server;
   console.log("json:",json);*/
   
   let tmpreg_status = await getLocalStorageValue('plg_regs_reassign_status');
-  reg_status = ((typeof(Object.values(tmpreg_status)[0]) != "undefined") ? Object.values(reg_status)[0] : reg_status);  
+  reg_status = ((typeof(Object.values(tmpreg_status)[0]) != "undefined") ? Object.values(tmpreg_status)[0] : reg_status);  
   //console.log(reg_status);
   console.log("reg_status:",reg_status);
   
