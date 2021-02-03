@@ -196,12 +196,13 @@ var server;
   console.log("timeout:",timeout);
   
   let tmpplg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
-  tmpplg_regs_reassign_reassign_enable = Object.values(plg_regs_reassign_reassign_enable);
+  tmpplg_regs_reassign_reassign_enable = Object.values(tmpplg_regs_reassign_reassign_enable);
   plg_regs_reassign_reassign_enable = (typeof(tmpplg_regs_reassign_reassign_enable[0]) != "undefined" ? tmpplg_regs_reassign_reassign_enable[0] : plg_regs_reassign_reassign_enable);
   console.log("plg_regs_reassign_reassign_enable:",plg_regs_reassign_reassign_enable);
   
   let tmpplg_regs_reassign_debug_off_enable = await getLocalStorageValue('plg_regs_reassign_debug_off_enable');
-  plg_regs_reassign_debug_off_enable = (typeof(Object.values(tmpplg_regs_reassign_debug_off_enable)[0]) != "undefined" ? tmpplg_regs_reassign_debug_off_enable[0] : plg_regs_reassign_debug_off_enable);
+  tmpplg_regs_reassign_debug_off_enable = Object.values(tmpplg_regs_reassign_debug_off_enable);
+  plg_regs_reassign_debug_off_enable = (typeof(tmpplg_regs_reassign_debug_off_enable[0]) != "undefined" ? tmpplg_regs_reassign_debug_off_enable[0] : plg_regs_reassign_debug_off_enable);
   console.log("plg_regs_reassign_debug_off_enable:",plg_regs_reassign_debug_off_enable);
   
   let tmpurl = await getLocalStorageValue('plg_regs_reassign_req_url');

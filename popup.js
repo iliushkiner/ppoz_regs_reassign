@@ -252,17 +252,18 @@ function load_inf_statistic(){
       let reasign_date = new Date(select_date);
       reasign_date = new Date(reasign_date.setDate(reasign_date.getDate() - j));  
       table += "<td class='date_" + j + "'><img src='loading.gif' alt='loading' class='loading'></td>";
-      /**
-      *В работе на текущий момент
-      *формат "2020-12-09"
-      **/
-      /*let date_to = new Date();            
-      let str_date_to = date_to.getFullYear() + '-' + ((date_to.getMonth()+1)<10 ? '0' : '') + (date_to.getMonth()+1) + '-' + date_to.getDate();*/             
-      let requrl = "http://ppoz-service-bal-01.prod.egrn:9001/manager/requests";
-               //{"pageNumber":0,"pageSize":1000,"statuses":["reg_validations"],"subjectRF":["12"],"executorDepartments":["12.146"],"executors":["ibkolesnikova"],"byActiveExecutor":true}
-      let json = {pageNumber:0,pageSize:1000,statuses:[reg_status],subjectRF:[12],executors:[value],byActiveExecutor:true};
-      getAjaxData(requrl,'.reg_'+value+' .count', json);      
     }
+    /**
+    *В работе на текущий момент
+    *формат "2020-12-09"
+    **/
+    /*let date_to = new Date();            
+    let str_date_to = date_to.getFullYear() + '-' + ((date_to.getMonth()+1)<10 ? '0' : '') + (date_to.getMonth()+1) + '-' + date_to.getDate();*/             
+    let requrl = "http://ppoz-service-bal-01.prod.egrn:9001/manager/requests";
+             //{"pageNumber":0,"pageSize":1000,"statuses":["reg_validations"],"subjectRF":["12"],"executorDepartments":["12.146"],"executors":["ibkolesnikova"],"byActiveExecutor":true}
+    let json = {pageNumber:0,pageSize:1000,statuses:[reg_status],subjectRF:[12],executors:[value],byActiveExecutor:true};
+    getAjaxData(requrl,'.reg_'+value+' .count', json);      
+    
     table += "</tr>";
     table += "<tr id='reg_reassigned_num_" + value + "' class='collapse'><td class='nums' colspan='" + (window.localStorage.plg_regs_reassign_countdate+2) + "'>";
     let divnums = "";      
