@@ -229,6 +229,7 @@ function load_inf_statistic(){
       }
   }
   
+  let reginclude = new Map();
   for(let group=0; group<=group_count; group++){
     $.each(plg_regs_reassign_filter_list, function(index,value){
         if(group == value.group){
@@ -240,6 +241,7 @@ function load_inf_statistic(){
                 } else {
                     $.merge(regs,[value.login]);
                 }        
+                reginclude.set(value.login, value.include);
             });
         }
     });
@@ -247,7 +249,7 @@ function load_inf_statistic(){
   console.log(regs);
   
   $.each(regs, function(index,value){
-    table += "<tr class='reg_" + value + "' data-toggle='collapse' data-target='#reg_reassigned_num_" + value + "'><td class='reg_name'>" + value + "</td><td class='count'><img src='loading.gif' alt='loading' class='loading'></td>";      
+    table += "<tr class='reg_" + value + "' data-toggle='collapse' data-target='#reg_reassigned_num_" + value + "'><td class='reg_name' " + (reginclude.get(value) === "off" ? "style='color:red;'" : "") + ">" + value + "</td><td class='count'><img src='loading.gif' alt='loading' class='loading'></td>";      
     for (var j=0; j<=parseInt(window.localStorage.plg_regs_reassign_countdate); j++){
       let reasign_date = new Date(select_date);
       reasign_date = new Date(reasign_date.setDate(reasign_date.getDate() - j));  
