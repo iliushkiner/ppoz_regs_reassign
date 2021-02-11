@@ -1,6 +1,6 @@
 {
   "name": "Regs Reassign",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "manifest_version": 2,
   "description": "Расширение позволяющее автоматический распределять обращения.",
   "options_page": "options.html",
@@ -32,7 +32,7 @@
   },*/
   
   "browser_action": {
-    "default_title": "Regs statistic",
+    "default_title": "Regs Reassign",
     "default_icon": "icon16.png",
     "default_popup": "popup.html"
   },
