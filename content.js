@@ -50,7 +50,10 @@ function check_filter(index, value, reqbyiditem, like){
         
         if(/*Array.isArray(value)*/is_array){
             if(!like){
-                result = (value.indexOf(reqbyiditem[index])>=0); 
+                $.each(value, function(vindex,vvalue){
+                    value[vindex] = vvalue.replace(/\s+/g,"");
+                });
+                result = (value.indexOf(reqbyiditem[index].replace(/\s+/g,""))>=0); 
             } else {
                 for(let likeval of value){
                     /**
@@ -88,6 +91,7 @@ function check_filter(index, value, reqbyiditem, like){
         $.each(value, function(vindex,vvalue){
             if (reqbyiditem[vindex].length > 0){
               for(let reqbyid_arrayitem of reqbyiditem[vindex]){
+                result = true;
                 $.each(vvalue, function(vvindex,vvvalue){
                     result = (result && check_filter(vvindex, vvalue[vvindex], reqbyid_arrayitem, false)); 
                     return result;
@@ -353,14 +357,12 @@ var server;
         });                      
         return freassigned;  
     }
-        
-    if(document.webkitVisibilityState == 'visible'){      
-      //let plg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
-      if(plg_regs_reassign_reassign_enable == true){
-       for(let json_item of json_list){
+    
+    function runAjaxJSON(curentkey,json_list){  
         /**
          *Получаем распределяемые обращения.
          **/
+        json_item = json_list[curentkey];
         $.ajax({
           url: url,
           dataType: "json",
@@ -622,9 +624,17 @@ var server;
             }
             //result = data;
             //$(selctor).html(data.requests.length);
+            if (++curentkey < json_list.length){
+                runAjaxJSON(curentkey, json_list);
+            }
           } 
         });
-       }
+    }    
+    
+    if(document.webkitVisibilityState == 'visible'){      
+      //let plg_regs_reassign_reassign_enable = await getLocalStorageValue('plg_regs_reassign_reassign_enable');
+      if(plg_regs_reassign_reassign_enable == true){
+        runAjaxJSON(0,json_list);       
       }    
     }
   }, timeout);
