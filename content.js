@@ -544,7 +544,7 @@ var server;
                   let reg_index = 0;
                   while (tmp_regs.length>reg_index){
                     let login = tmp_regs[reg_index].login;
-                    if (!tmp_regs[reg_index].unlim && reassigned_today.get(login).count > (reassigned_today.get(login).percent/100) * reassigned_today.get(login).count){
+                    if (!tmp_regs[reg_index].unlim && reassigned_today.get(login).count > (reassigned_today.get(login).percent/100) * reassigned_today_max_count){
                         tmp_regs.splice(reg_index,1);
                     } else {
                         reg_index++;
