@@ -19,6 +19,10 @@ var indexeddb = {
 
 indexeddb = (typeof(window.localStorage.plg_regs_reassign_indexeddb) != "undefined" ? JSON.parse(window.localStorage.plg_regs_reassign_indexeddb) : indexeddb);
 //indexeddb = JSON.parse(Object.values(indexeddb_json)[0]);
+let plg_regs_reassign_debug_off_enable = window.localStorage.plg_regs_reassign_debug_off_enable;
+console.log("plg_regs_reassign_debug_off_enable", plg_regs_reassign_debug_off_enable);
+indexeddb['server'] = indexeddb['server'] + (typeof(plg_regs_reassign_debug_off_enable) != "undefined" && plg_regs_reassign_debug_off_enable=="true" ? '' : '_debug');
+console.log("indexeddb", indexeddb);
 
 var reg_status = (typeof(window.localStorage.plg_regs_reassign_status) != "undefined") ? (window.localStorage.plg_regs_reassign_status) : "initial_examinations";
 
