@@ -10,7 +10,7 @@
             </bookmark>
             <bookmark id="3">
                 <name/>
-                <line>519</line>
+                <line>656</line>
                 <key/>
             </bookmark>
         </file>
@@ -20,6 +20,7 @@
             <file>file:/D:/Tworenija/Chrome%20Addons/regs%20reassign%20v1.0.0/content.js</file>
             <file>file:/D:/Tworenija/Chrome%20Addons/regs%20reassign%20v1.0.0/options.js</file>
             <file>file:/D:/Tworenija/Chrome%20Addons/regs%20reassign%20v1.0.0/options.html</file>
+            <file>file:/D:/Tworenija/Chrome%20Addons/regs%20reassign%20v1.0.0/popup.js</file>
         </group>
     </open-files>
 </project-private>

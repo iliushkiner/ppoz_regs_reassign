@@ -479,7 +479,7 @@ var server;
                 for(let appealnumber_item of plg_regs_reassign_appealnumber_list){
                     if(reqbyid.appealNumber === appealnumber_item.appealnumber){
                         reassigned = reassign_appealnumber(reqbyid, reg_status, appealnumber_item.reg);
-                        reassigned_today.set(appealnumber_item.reg, {"count":reassigned_today.get(appealnumber_item.reg).count + 1,"limit":reassigned_today.get(appealnumber_item.reg).limit});
+                        reassigned_today.set(appealnumber_item.reg, {"count":reassigned_today.get(appealnumber_item.reg).count + 1,"percent":reassigned_today.get(appealnumber_item.reg).percent,"limit":reassigned_today.get(appealnumber_item.reg).limit});
                         //console.log("Колличество после назначения:",tmp_regs);
                         break;
                     }
@@ -514,13 +514,22 @@ var server;
                        */
                       $.each(reg_list_item.regs, function(reg_index,reg_item){
                           if (reg_item.unlim || reassigned_today.get(reg_item.login).limit > reassigned_today.get(reg_item.login).count || reassigned_today.get(reg_item.login).limit === 0){
-                              tmp_regs.push(reg_item);
+                                let regexist = false;
+                                $.each(tmp_regs, function(index,reg){
+                                    if (reg_item.login == reg.login && reg_item.unlim == reg.unlim){
+                                        regexist = true;
+                                        return false;
+                                    }                                    
+                                });           
+                                if (!regexist){
+                                    tmp_regs.push(reg_item);
+                                }
                           }
                       });
                     }
                   });
-                  console.log("Список регов unlim:", unlim_regs);
-                  console.log("Предварительный список регов учитывая limit:", tmp_regs);
+                  console.log("Список регов unlim: ",unlim_regs);
+                  console.log("Предварительный список регов учитывая limit: " + JSON.stringify(tmp_regs));
                   let unlim = false;
                   for(let tmp_regs_item of tmp_regs){
                       unlim = tmp_regs_item.unlim;
@@ -538,7 +547,7 @@ var server;
                             reg_index++;
                         }
                     }
-                    console.log("Cписок регов после проверки на unlim:", tmp_regs);
+                    console.log("Cписок регов после проверки на unlim: " + JSON.stringify({"array" : tmp_regs}));
                   }
                                     
                   /**
@@ -554,15 +563,23 @@ var server;
                   console.log("Максимальное количество розданных обращений выбранных регов:",reassigned_today_max_count);
                   let reg_index = 0;
                   while (tmp_regs.length>reg_index){
-                    let login = tmp_regs[reg_index].login;
-                    if (!tmp_regs[reg_index].unlim && reassigned_today.get(login).count > (reassigned_today.get(login).percent/100) * reassigned_today_max_count){
+                    let login = tmp_regs[reg_index].login;                    
+                    //console.log("reassigned_today: ",reassigned_today);
+                    console.log(tmp_regs[reg_index].login + " - " + reassigned_today.get(login).percent + "%: " + ((reassigned_today.get(login).percent/100) * reassigned_today_max_count));
+                    console.log("Если у рега больше равно " + (Math.floor((reassigned_today.get(login).percent/100) * reassigned_today_max_count)) + " назначенных, то его отбрасываем");
+                    if (/*reassigned_today.get(login).count !=0 &&*/
+                        /*reassigned_today_max_count !=0 &&*/
+                        reassigned_today.get(login).percent < 100 &&
+                        !tmp_regs[reg_index].unlim && 
+                        reassigned_today.get(login).count >= Math.floor((reassigned_today.get(login).percent/100) * reassigned_today_max_count)
+                       ){
                         console.log("Превышен лимит по %:",tmp_regs[reg_index]);
                         tmp_regs.splice(reg_index,1);
                     } else {
                         reg_index++;
                     }
                   }                
-                  console.log("Подобранные реги после чистки по %:",tmp_regs);
+                  console.log("Подобранные реги после чистки по %: " + JSON.stringify({"array" : tmp_regs}));
                   
                   if (tmp_regs.length>0){
                     /**
@@ -623,10 +640,21 @@ var server;
                         });*/
                         
                         //console.log("Подобранный рег",tmp_regs[reg_index_min_count]);
-                        reassigned = reassign_appealnumber(reqbyid, reg_status, tmp_regs[reg_index_min_count].login);
-                        reassigned_today.set(tmp_regs[reg_index_min_count].login, {"count":reassigned_today.get(tmp_regs[reg_index_min_count].login).count + 1,"limit":reassigned_today.get(tmp_regs[reg_index_min_count].login).limit});
-                        console.log("Колличество после назначения tmp_regs[]:",reassigned_today);
-                        console.log("Колличество после назначения:reassigned_today[]",reassigned_today);
+                        let user = tmp_regs[reg_index_min_count].login;
+                        reassigned = reassign_appealnumber(reqbyid, reg_status, user);                        
+                        reassigned_today.set(user, {"count":reassigned_today.get(user).count + 1,"percent": reassigned_today.get(user).percent,"limit":reassigned_today.get(user).limit});
+                        console.log("текущее количество обращений:",reassigned_today.get(user).count);
+                        //let _tmp_regs = tmp_regs;
+                        console.log("Колличество после назначения tmp_regs[]:");
+                        $.each(tmp_regs, function(reg_index,reg_item){
+                            console.log(reg_item.login+": "+reg_item.count);
+                        });
+                        //let _reassigned_today = reassigned_today;                                                
+                        let outputlist = "";
+                        for(let key of reassigned_today.keys()){                        
+                            outputlist = outputlist+key+": "+reassigned_today.get(key).count+"; ";
+                        }
+                        console.log("Колличество после назначения:reassigned_today[]: ",outputlist);                        
                     }
                   }
                 }
